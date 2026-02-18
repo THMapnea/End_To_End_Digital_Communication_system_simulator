@@ -65,9 +65,9 @@ std::vector<int> addParityBits(const std::vector<int>& bits, const int parity_bi
     
     std::vector<int> result(bits.size() + parity_bits);
     
-    //copies the data bits in the non even(bit) position
     int data_index = 0; //helper index variable
     
+    //copies the data bits in the non even(bit) position
     //loop trough all the bits of the result
     for(int i = 1; i <= result.size(); i++){
 	  	
