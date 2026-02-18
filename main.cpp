@@ -8,9 +8,9 @@
 
 std::vector<int> bitGenerator(const int n_bits);
 std::vector<int> addParityBits(const std::vector<int>& bits, const int parity_bits);
-std::vector<int> HammingEncoder(const std::vector<int>& bte, const int data_bits, const int parity_bits);
+std::vector<int> hammingEncoder(const std::vector<int>& bte, const int data_bits, const int parity_bits);
 std::vector<double> BPSKModulator(const std::vector<int>& btm, const double Eb);
-void checkEnergy(const std::vector<double>& mb, int amplitude);
+void checkEnergy(const std::vector<double>& mb, double amplitude);
 
 int main(){
 	//seed setting
@@ -20,13 +20,13 @@ int main(){
 	std::vector<int> bts = bitGenerator(16);
 	
 	//apply Hamming channel coding
+	std::vector<int> hamming_encoded_bits = hammingEncoder(bts, 4, 3);
 	 
-	
 	//define the amplitude of the modulation
 	double Eb = 1.1;
 	
 	//symbols for bpsk
-	std::vector<double> symbols = BPSKModulator(bts, Eb);
+	std::vector<double> symbols = BPSKModulator(hamming_encoded_bits, Eb);
 	
 	//check if the modulation was successful
 	checkEnergy(symbols, Eb);
@@ -45,7 +45,7 @@ int main(){
 */
 std::vector<int> bitGenerator(const int n_bits){
 	
-	std::vector<int> bits(n_bits);
+	std::vector<int> bits;
 	
 	for(int i = 0; i < n_bits; i++){
 		bits.push_back(rand() % 10 % 2);
@@ -63,7 +63,7 @@ std::vector<int> bitGenerator(const int n_bits){
 */
 std::vector<int> addParityBits(const std::vector<int>& bits, const int parity_bits){
     
-    std::vector<int> result(bits.size() + parity_bits);
+    std::vector<int> result(bits.size() + parity_bits); //dimension must be set for the for loop 
     
     int data_index = 0; //helper index variable
     
@@ -118,13 +118,25 @@ std::vector<int> addParityBits(const std::vector<int>& bits, const int parity_bi
 
 */
 
-std::vector<int> HammingEncoder(const std::vector<int>& bte, const int data_bits, const int parity_bits){
+std::vector<int> hammingEncoder(const std::vector<int>& bte, const int data_bits, const int parity_bits){
 	
 	std::vector<int> encoded_bits;
 	
-	
-	
-	
+	//!!!!need to fix if bte.size() is not a multiple of the data bits!!!!
+	for(int i = 0; i < bte.size(); i+=data_bits){
+		
+		std::vector<int> helper;
+		
+		//build the block to encode that is the same size as the data bits
+		for(int j = 0; j < data_bits; j++){
+			helper.push_back(bte[i + j]);
+		}
+		
+		//contains the new vector with the parity bits added built with copy constructor
+		std::vector<int> helper_with_parity_bits(addParityBits(helper, parity_bits));
+		
+		encoded_bits.insert(encoded_bits.end(), helper_with_parity_bits.begin(), helper_with_parity_bits.end());
+	}
 	
 	
 	return encoded_bits;
@@ -145,7 +157,7 @@ std::vector<double> BPSKModulator(const std::vector<int>& btm, const double Eb){
 	
 	double amplitude = std::sqrt(Eb);
 	
-	std::vector<double> symbols(btm.size());
+	std::vector<double> symbols;
 	
 	//apply bpsk
 	for(const auto& b : btm){
@@ -163,19 +175,21 @@ std::vector<double> BPSKModulator(const std::vector<int>& btm, const double Eb){
 
 */
 
-void checkEnergy(const std::vector<double>& mb, const int Eb){
+void checkEnergy(const std::vector<double>& mb, const double Eb){
 	
 	double amplitude = std::sqrt(Eb);
 	
-	int sum = 0;
+	double sum = 0;
 	
 	for(const auto& b : mb){
 		sum += b * b;
 	}
 	
-	int energy_found = sum / mb.size();
+	double energy_found = sum / mb.size();
 	
-	if(energy_found == amplitude){
+	double epsilon = 1e-10; //correct floating point division error
+	
+	if(energy_found - Eb < epsilon){
 		std::cout<<"energy correctly conserved modulation successful\n";
 	}else{
 		std::cout<<"error in the modulation incorrect energy\n";
