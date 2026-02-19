@@ -3,14 +3,26 @@
 #include <cstdlib>
 #include <cmath>
 #include <time.h>
+#include <chrono>
+#include <thread>
 
 
-
+//generator
 std::vector<int> bitGenerator(const int n_bits);
+
+//encoder and modulator
 std::vector<int> addParityBits(const std::vector<int>& bits, const int parity_bits);
 std::vector<int> hammingEncoder(const std::vector<int>& bte, const int data_bits, const int parity_bits);
 std::vector<double> BPSKModulator(const std::vector<int>& btm, const double Eb);
+
+//control
 void checkEnergy(const std::vector<double>& mb, double amplitude);
+
+//debug
+void showBitString(const std::vector<int>& bits);
+void showBPSKModulation(const std::vector<double>& symbols, int speed);
+
+
 
 int main(){
 	//seed setting
@@ -23,7 +35,7 @@ int main(){
 	std::vector<int> hamming_encoded_bits = hammingEncoder(bts, 4, 3);
 	 
 	//define the amplitude of the modulation
-	double Eb = 1.1;
+	double Eb = 1.3;
 	
 	//symbols for bpsk
 	std::vector<double> symbols = BPSKModulator(hamming_encoded_bits, Eb);
@@ -31,7 +43,13 @@ int main(){
 	//check if the modulation was successful
 	checkEnergy(symbols, Eb);
 	
-		
+	//show the various bit strings
+	std::cout<<"the original string is: ";showBitString(bts);
+	std::cout<<"the Hamming encoded string is: ";showBitString(hamming_encoded_bits);
+	
+	//show the BPSK modulation
+	showBPSKModulation(symbols, 50);
+
 	return 0;
 }
 
@@ -47,12 +65,15 @@ std::vector<int> bitGenerator(const int n_bits){
 	
 	std::vector<int> bits;
 	
+	bits.reserve(n_bits);
+	
 	for(int i = 0; i < n_bits; i++){
 		bits.push_back(rand() % 10 % 2);
 	}
 	
 	return bits;
 }
+
 
 
 /*
@@ -64,6 +85,8 @@ std::vector<int> bitGenerator(const int n_bits){
 std::vector<int> addParityBits(const std::vector<int>& bits, const int parity_bits){
     
     std::vector<int> result(bits.size() + parity_bits); //dimension must be set for the for loop 
+    
+    result.reserve(bits.size() + parity_bits);
     
     int data_index = 0; //helper index variable
     
@@ -112,6 +135,7 @@ std::vector<int> addParityBits(const std::vector<int>& bits, const int parity_bi
 }
 
 
+
 /*
 
 	function that applies an hamming encoding to the bits
@@ -122,10 +146,17 @@ std::vector<int> hammingEncoder(const std::vector<int>& bte, const int data_bits
 	
 	std::vector<int> encoded_bits;
 	
+	//helps to compute the reserve of the space
+	int num_block = (bte.size() + data_bits - 1) / data_bits;
+	
+	encoded_bits.reserve(num_block * (data_bits + parity_bits));
+	
 	//!!!!need to fix if bte.size() is not a multiple of the data bits!!!!
 	for(int i = 0; i < bte.size(); i+=data_bits){
 		
 		std::vector<int> helper;
+		
+		helper.reserve(data_bits);
 		
 		//build the block to encode that is the same size as the data bits
 		for(int j = 0; j < data_bits; j++){
@@ -194,4 +225,41 @@ void checkEnergy(const std::vector<double>& mb, const double Eb){
 	}else{
 		std::cout<<"error in the modulation incorrect energy\n";
 	}
+}
+
+
+
+/*
+
+	function that shows a string of bits
+
+*/
+
+void showBitString(const std::vector<int>& bits){
+	
+	for(const auto& bit : bits){
+		std::cout<<bit;
+	}
+	
+	std::cout<<std::endl;
+}
+
+
+
+/*
+
+	function the BPSK modulation
+
+*/
+
+void showBPSKModulation(const std::vector<double>& symbols, const int speed){
+	std::cout<<"the symbols string is: \n";
+	for(const auto& s : symbols){
+		std::cout<<s;
+		std::this_thread::sleep_for(std::chrono::milliseconds(speed));
+		std::cout<<"\r";
+		std::this_thread::sleep_for(std::chrono::milliseconds(speed));
+	}
+	
+		
 }
