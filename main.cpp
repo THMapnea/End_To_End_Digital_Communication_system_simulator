@@ -14,9 +14,11 @@ std::vector<int> bitGenerator(const int n_bits);
 std::vector<int> addParityBits(const std::vector<int>& bits, const int parity_bits);
 std::vector<int> hammingEncoder(const std::vector<int>& bte, const int data_bits, const int parity_bits);
 std::vector<double> BPSKModulator(const std::vector<int>& btm, const double Eb);
+std::vector<int> BPSKDemodulator(const std::vector<double>& symbols);
 
 //control
 void checkEnergy(const std::vector<double>& mb, double amplitude);
+void checkDemodulation(const std::vector<int>& modulated_bits, const std::vector<int>& demodulated_bits);
 
 //debug
 void showBitString(const std::vector<int>& bits);
@@ -43,12 +45,20 @@ int main(){
 	//check if the modulation was successful
 	checkEnergy(symbols, Eb);
 	
+	//demodulate the signal
+	std::vector<int> dmb = BPSKDemodulator(symbols);
+	
 	//show the various bit strings
 	std::cout<<"the original string is: ";showBitString(bts);
 	std::cout<<"the Hamming encoded string is: ";showBitString(hamming_encoded_bits);
 	
 	//show the BPSK modulation
 	showBPSKModulation(symbols, 50);
+	
+	//show the demodulated string
+	std::cout<<"the demodulated string is: ";showBitString(dmb);
+	
+	checkDemodulation(hamming_encoded_bits, dmb);
 
 	return 0;
 }
@@ -202,6 +212,47 @@ std::vector<double> BPSKModulator(const std::vector<int>& btm, const double Eb){
 
 /*
 
+	function that demodulates the BPSK
+
+*/
+
+std::vector<int> BPSKDemodulator(const std::vector<double>& symbols){
+	
+	std::vector<int> demodulated_bit_string;
+	demodulated_bit_string.reserve(symbols.size());
+	
+	for(const auto& s : symbols){
+		if(s > 0){
+			demodulated_bit_string.push_back(1);
+		}else{
+			demodulated_bit_string.push_back(0);
+		}
+	}
+	
+	return demodulated_bit_string;
+}
+
+
+
+/*
+
+	function that controls if the demodulation has produced errors
+
+*/
+
+void checkDemodulation(const std::vector<int>& modulated_bits, const std::vector<int>& demodulated_bits){
+	
+	if(modulated_bits == demodulated_bits){
+		std::cout<<"demodulation successful\n";
+	}else{
+		std::cout<<"error during the demodulation\n";
+	}
+	
+} 
+
+
+/*
+
 	function that controls if the signal energy has been preserved
 
 */
@@ -253,7 +304,7 @@ void showBitString(const std::vector<int>& bits){
 */
 
 void showBPSKModulation(const std::vector<double>& symbols, const int speed){
-	std::cout<<"the symbols string is: \n";
+	std::cout<<"processing symbols string... \n";
 	for(const auto& s : symbols){
 		std::cout<<s;
 		std::this_thread::sleep_for(std::chrono::milliseconds(speed));
@@ -261,5 +312,11 @@ void showBPSKModulation(const std::vector<double>& symbols, const int speed){
 		std::this_thread::sleep_for(std::chrono::milliseconds(speed));
 	}
 	
-		
+	std::cout<<"\r";
 }
+
+
+
+
+
+
